@@ -2075,11 +2075,16 @@ export class ModelRegistry {
 	}
 
 	/**
-	 * Await the in-flight background refresh, if any. Resolves immediately
-	 * when no refresh is running. Callers use this to wait for models.yml
-	 * discovery providers to finish before falling back to a different model.
+	 * Await the in-flight background refresh, starting one if none is running.
+	 * When the registry is supplied externally (e.g. main.ts passes it via
+	 * `options.modelRegistry`), `createAgentSession` skips `refreshInBackground`,
+	 * so no promise is in flight yet — kick one off here so the caller actually
+	 * waits for models.yml discovery to complete before falling back.
 	 */
 	waitForBackgroundRefresh(): Promise<void> {
+		if (!this.#backgroundRefresh) {
+			this.refreshInBackground();
+		}
 		return this.#backgroundRefresh ?? Promise.resolve();
 	}
 
