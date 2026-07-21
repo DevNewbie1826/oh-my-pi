@@ -34,13 +34,14 @@ interface AskEditorProps {
 function AskEditor({ prefill, onSubmit }: AskEditorProps): ReactNode {
 	const [draft, setDraft] = useState(prefill ?? "");
 	const taRef = useRef<HTMLTextAreaElement | null>(null);
+	const composingRef = useRef(false);
 
 	useLayoutEffect(() => {
 		autosize(taRef.current);
 	}, [draft]);
 
 	const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
-		if (e.nativeEvent.isComposing) return;
+		if (e.nativeEvent.isComposing || composingRef.current) return;
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			onSubmit(draft);
@@ -55,6 +56,8 @@ function AskEditor({ prefill, onSubmit }: AskEditorProps): ReactNode {
 				value={draft}
 				onChange={e => setDraft(e.target.value)}
 				onKeyDown={onKeyDown}
+				onCompositionStart={() => { composingRef.current = true; }}
+				onCompositionEnd={() => { setTimeout(() => { composingRef.current = false; }); }}
 				placeholder="type your response…"
 				rows={1}
 				spellCheck={false}
@@ -76,6 +79,7 @@ function AskEditor({ prefill, onSubmit }: AskEditorProps): ReactNode {
 export function Composer({ client, snapshot }: ComposerProps): ReactNode {
 	const [text, setText] = useState("");
 	const taRef = useRef<HTMLTextAreaElement | null>(null);
+	const composingRef = useRef(false);
 
 	const live = snapshot.phase === "live";
 	const readOnly = snapshot.readOnly;
@@ -97,7 +101,7 @@ export function Composer({ client, snapshot }: ComposerProps): ReactNode {
 	}, [client, live, readOnly, text]);
 
 	const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
-		if (e.nativeEvent.isComposing) return;
+		if (e.nativeEvent.isComposing || composingRef.current) return;
 		if (e.key === "Enter" && !e.shiftKey) {
 			e.preventDefault();
 			send();
@@ -169,6 +173,8 @@ export function Composer({ client, snapshot }: ComposerProps): ReactNode {
 					value={text}
 					onChange={e => setText(e.target.value)}
 					onKeyDown={onKeyDown}
+					onCompositionStart={() => { composingRef.current = true; }}
+					onCompositionEnd={() => { setTimeout(() => { composingRef.current = false; }); }}
 					placeholder={
 						readOnly
 							? "read-only session — watching only"
